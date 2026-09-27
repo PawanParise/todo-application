@@ -6,7 +6,7 @@ import NotificationBell from "./components/NotificationBell";
 import ReminderAlert from "./components/ReminderAlert";
 import { playReminderChime } from "./utils/reminderSound";
 
-const API_URL = "http://localhost:4040/api/todos";
+const API_URL = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:4040"}/api/todos`;
 
 function App() {
   const [todos, setTodos] = useState([]);
