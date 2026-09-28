@@ -1322,6 +1322,10 @@
   }
 }
 
+.icon-button.spinning svg {
+  animation: spin 0.8s linear infinite;
+}
+
 /* Footer */
 .footer {
   text-align: center;

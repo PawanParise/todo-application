@@ -41,4 +41,18 @@ public class AuthResponse {
     public void setData(Object data) {
         this.data = data;
     }
+
+    public Long getUserId() {
+        if (data instanceof java.util.Map) {
+            Object idObj = ((java.util.Map<?, ?>) data).get("id");
+            if (idObj instanceof Number) {
+                return ((Number) idObj).longValue();
+            }
+            Object userIdObj = ((java.util.Map<?, ?>) data).get("userId");
+            if (userIdObj instanceof Number) {
+                return ((Number) userIdObj).longValue();
+            }
+        }
+        return null;
+    }
 }

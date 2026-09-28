@@ -74,14 +74,23 @@ function App() {
       // 1. Check tab-isolated session (priority)
       const sessionUser = sessionStorage.getItem("todo_user");
       if (sessionUser) {
-        return JSON.parse(sessionUser);
+        const parsed = JSON.parse(sessionUser);
+        if (parsed && parsed.id) {
+          return parsed;
+        }
       }
       // 2. Global fallback from last login
       const localUser = localStorage.getItem("todo_user");
       if (localUser) {
-        sessionStorage.setItem("todo_user", localUser);
-        return JSON.parse(localUser);
+        const parsed = JSON.parse(localUser);
+        if (parsed && parsed.id) {
+          sessionStorage.setItem("todo_user", localUser);
+          return parsed;
+        }
       }
+      // Remove any broken/incomplete sessions missing an id
+      sessionStorage.removeItem("todo_user");
+      localStorage.removeItem("todo_user");
       return null;
     } catch {
       return null;
@@ -204,6 +213,75 @@ function App() {
   useEffect(() => {
     fetchTodos();
   }, [fetchTodos]);
+
+  /* =========================================================
+     MULTI-BROWSER & MULTI-TAB CLOUD SYNCHRONIZATION
+     - Re-fetches instantly whenever user focuses window / switches back
+     - Gentle 10-second polling keeps Safari and Chrome mirrored in real-time
+  ========================================================= */
+  useEffect(() => {
+    const handleSync = () => {
+      if (document.visibilityState === "visible" && currentUser?.id) {
+        fetchTodos();
+      }
+    };
+
+    window.addEventListener("focus", handleSync);
+    document.addEventListener("visibilitychange", handleSync);
+
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === "visible" && currentUser?.id) {
+        fetchTodos();
+      }
+    }, 10000);
+
+    return () => {
+      window.removeEventListener("focus", handleSync);
+      document.removeEventListener("visibilitychange", handleSync);
+      clearInterval(pollInterval);
+    };
+  }, [fetchTodos, currentUser?.id]);
+
+  /* =========================================================
+     SESSION INTEGRITY & AUTO-HEALING
+     - Recovers user ID if session has email but lost id
+  ========================================================= */
+  useEffect(() => {
+    const checkAndRepairSession = async () => {
+      let emailToLookup = currentUser?.email;
+      if (!emailToLookup) {
+        try {
+          const raw = localStorage.getItem("todo_user") || sessionStorage.getItem("todo_user");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            emailToLookup = parsed?.email;
+          }
+        } catch {}
+      }
+
+      if (emailToLookup && (!currentUser || !currentUser.id)) {
+        try {
+          const authBase = API_URL.replace("/api/todos", "/api/auth");
+          const res = await fetch(`${authBase}/me?email=${encodeURIComponent(emailToLookup)}`);
+          if (res.ok) {
+            const json = await res.json();
+            const data = json.data || {};
+            const userId = data.id || data.userId || json.userId;
+            if (userId) {
+              const healedUser = { id: userId, email: data.email || emailToLookup };
+              setCurrentUser(healedUser);
+              sessionStorage.setItem("todo_user", JSON.stringify(healedUser));
+              localStorage.setItem("todo_user", JSON.stringify(healedUser));
+            }
+          }
+        } catch (e) {
+          console.warn("Could not auto-repair session:", e);
+        }
+      }
+    };
+
+    checkAndRepairSession();
+  }, [currentUser]);
 
   /* =========================================================
      REAL-TIME INDUSTRY-LEVEL REMINDER SCHEDULER
@@ -335,8 +413,8 @@ function App() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image size must be less than 10MB.");
       event.target.value = "";
       return;
     }
@@ -347,9 +425,48 @@ function App() {
       return;
     }
 
-    setImage(file);
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreview(previewUrl);
+    // Client-side optimize/compress to ensure snappy sync across browsers
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxDim = 800;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+              });
+              setImage(compressedFile);
+              setImagePreview(canvas.toDataURL("image/jpeg", 0.85));
+            } else {
+              setImage(file);
+              setImagePreview(URL.createObjectURL(file));
+            }
+          },
+          "image/jpeg",
+          0.85
+        );
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   /* =========================
@@ -442,6 +559,12 @@ function App() {
   const saveTodo = async () => {
     if (!title.trim()) {
       alert("Please enter a title.");
+      return;
+    }
+
+    if (!currentUser?.id) {
+      alert("Session expired. Please sign in again.");
+      setCurrentUser(null);
       return;
     }
 
@@ -866,6 +989,17 @@ function App() {
               onSnoozeTodo={handleSnooze}
               onSelectTodo={editTodo}
             />
+
+            {/* SYNC CLOUD BUTTON */}
+            <button
+              className={`icon-button ${loading ? "spinning" : ""}`}
+              onClick={fetchTodos}
+              title="Sync Tasks with Cloud"
+              aria-label="Sync Tasks"
+              id="sync-tasks-btn"
+            >
+              <RefreshCwIcon size={18} />
+            </button>
 
             {/* DAY / NIGHT BUTTON */}
             <button
