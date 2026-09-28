@@ -1,4 +1,17 @@
 import { useMemo, useState } from "react";
+import {
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  CalendarCheckIcon,
+  CheckIcon,
+  BellIcon,
+  ClockIcon,
+  AlertCircleIcon,
+  EditIcon,
+  TrashIcon,
+} from "./Icons";
 
 export default function CalendarView({
   todos = [],
@@ -114,36 +127,59 @@ export default function CalendarView({
 
   // Check if a task is overdue
   const isOverdue = (todo) => {
-    if (todo.completed || !todo.dueDate) return false;
+    if (todo.completed) return false;
+    if (!todo.dueDate) return false;
     const now = new Date();
-    const due = new Date(todo.dueDate + (todo.dueTime ? `T${todo.dueTime}` : "T23:59:59"));
+    const due = new Date(
+      todo.dueDate + (todo.dueTime ? `T${todo.dueTime}` : "T23:59:59")
+    );
     return due < now;
   };
 
-  // Month stats
+  // Month Statistics
   const monthStats = useMemo(() => {
-    const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
-    const thisMonthTodos = todos.filter((t) => t.dueDate && t.dueDate.startsWith(monthPrefix));
-    const completed = thisMonthTodos.filter((t) => t.completed).length;
-    const pending = thisMonthTodos.length - completed;
-    const overdue = thisMonthTodos.filter(isOverdue).length;
+    let total = 0;
+    let completed = 0;
+    let pending = 0;
+    let overdue = 0;
 
-    return { total: thisMonthTodos.length, completed, pending, overdue };
+    const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+
+    todos.forEach((todo) => {
+      if (todo.dueDate && todo.dueDate.startsWith(currentMonthPrefix)) {
+        total++;
+        if (todo.completed) {
+          completed++;
+        } else {
+          pending++;
+          if (isOverdue(todo)) {
+            overdue++;
+          }
+        }
+      }
+    });
+
+    return { total, completed, pending, overdue };
   }, [todos, year, month]);
 
-  // Tasks for selected date
+  // Selected Day tasks
   const selectedDateTasks = useMemo(() => {
     const list = todosByDate[selectedDateStr] || [];
-    if (calendarFilter === "pending") return list.filter((t) => !t.completed);
-    if (calendarFilter === "completed") return list.filter((t) => t.completed);
+    if (calendarFilter === "pending") {
+      return list.filter((t) => !t.completed);
+    }
+    if (calendarFilter === "completed") {
+      return list.filter((t) => t.completed);
+    }
     return list;
   }, [todosByDate, selectedDateStr, calendarFilter]);
 
+  // Human readable date for selected day
   const readableSelectedDate = useMemo(() => {
     if (!selectedDateStr) return "";
     const [y, m, d] = selectedDateStr.split("-").map(Number);
     const dateObj = new Date(y, m - 1, d);
-    return dateObj.toLocaleDateString("en-US", {
+    return dateObj.toLocaleDateString(undefined, {
       weekday: "long",
       year: "numeric",
       month: "short",
@@ -156,7 +192,9 @@ export default function CalendarView({
       {/* HEADER & MONTH CONTROLS */}
       <div className="calendar-header-card">
         <div className="calendar-title-group">
-          <div className="calendar-icon-badge">📅</div>
+          <div className="calendar-icon-badge">
+            <CalendarIcon size={22} />
+          </div>
           <div>
             <h2 className="calendar-title">
               {monthNames[month]} {year}
@@ -199,7 +237,7 @@ export default function CalendarView({
               title="Previous Month"
               aria-label="Previous Month"
             >
-              ‹
+              <ChevronLeftIcon size={16} />
             </button>
             <button
               type="button"
@@ -215,7 +253,7 @@ export default function CalendarView({
               title="Next Month"
               aria-label="Next Month"
             >
-              ›
+              <ChevronRightIcon size={16} />
             </button>
           </div>
 
@@ -354,14 +392,17 @@ export default function CalendarView({
               onClick={() => onAddTaskForDate(selectedDateStr)}
               title="Add task for this date"
             >
-              + Add Task
+              <PlusIcon size={15} />
+              <span>Add Task</span>
             </button>
           </div>
 
           <div className="agenda-tasks-list">
             {selectedDateTasks.length === 0 ? (
               <div className="agenda-empty-state">
-                <div className="agenda-empty-icon">🏖️</div>
+                <div className="agenda-empty-icon">
+                  <CalendarCheckIcon size={44} />
+                </div>
                 <h4>No tasks scheduled</h4>
                 <p>Enjoy your free day or schedule a new goal.</p>
                 <button
@@ -369,7 +410,8 @@ export default function CalendarView({
                   className="agenda-create-btn"
                   onClick={() => onAddTaskForDate(selectedDateStr)}
                 >
-                  + Create Task for {selectedDateStr}
+                  <PlusIcon size={14} />
+                  <span>Create Task for {selectedDateStr}</span>
                 </button>
               </div>
             ) : (
@@ -395,7 +437,7 @@ export default function CalendarView({
                         onClick={() => onToggleTodo(todo)}
                         title={todo.completed ? "Mark as Pending" : "Mark as Completed"}
                       >
-                        {todo.completed ? "✓" : ""}
+                        {todo.completed && <CheckIcon size={13} />}
                       </button>
 
                       <div className="agenda-task-info">
@@ -406,7 +448,7 @@ export default function CalendarView({
                               className="agenda-reminder-badge"
                               title={`Reminder set for ${todo.reminderDateTime.replace("T", " ")}`}
                             >
-                              🔔
+                              <BellIcon size={13} />
                             </span>
                           )}
                         </div>
@@ -418,17 +460,20 @@ export default function CalendarView({
                         <div className="agenda-task-meta">
                           {todo.dueTime && (
                             <span className="agenda-meta-time">
-                              ⏰ {todo.dueTime.substring(0, 5)}
+                              <ClockIcon size={13} />
+                              <span>{todo.dueTime.substring(0, 5)}</span>
                             </span>
                           )}
                           {overdue && (
                             <span className="agenda-meta-status overdue">
-                              ⚠️ Overdue
+                              <AlertCircleIcon size={13} />
+                              <span>Overdue</span>
                             </span>
                           )}
                           {todo.completed && (
                             <span className="agenda-meta-status done">
-                              ✓ Completed
+                              <CheckIcon size={13} />
+                              <span>Completed</span>
                             </span>
                           )}
                         </div>
@@ -448,7 +493,7 @@ export default function CalendarView({
                         onClick={() => onEditTodo(todo)}
                         title="Edit Task"
                       >
-                        ✎
+                        <EditIcon size={14} />
                       </button>
                       <button
                         type="button"
@@ -456,7 +501,7 @@ export default function CalendarView({
                         onClick={() => onDeleteTodo(todo.id)}
                         title="Delete Task"
                       >
-                        🗑
+                        <TrashIcon size={14} />
                       </button>
                     </div>
                   </div>
