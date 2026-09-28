@@ -5,6 +5,31 @@ import CalendarView from "./components/CalendarView";
 import NotificationBell from "./components/NotificationBell";
 import ReminderAlert from "./components/ReminderAlert";
 import { playReminderChime } from "./utils/reminderSound";
+import {
+  LogoIcon,
+  HomeIcon,
+  CalendarIcon,
+  ListTodoIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  SunIcon,
+  MoonIcon,
+  LogOutIcon,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  SearchIcon,
+  UndoIcon,
+  RefreshCwIcon,
+  AlertTriangleIcon,
+  MailIcon,
+  BellIcon,
+  ImageIcon,
+  XIcon,
+  InboxIcon,
+  TrendingUpIcon,
+} from "./components/Icons";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:4040"}/api/todos`;
 
@@ -673,10 +698,12 @@ function App() {
       <div className={`app auth-wrapper ${darkMode ? "dark-mode" : "light-mode"}`}>
         <header className="auth-standalone-header">
           <div className="brand-standalone">
-            <div className="brand-icon">✓</div>
+            <div className="brand-icon">
+              <LogoIcon size={32} />
+            </div>
             <div>
-              <strong className="brand-title">Todo App</strong>
-              <span className="brand-tagline">Plan • Do • Achieve</span>
+              <strong className="brand-title">TaskFlow</strong>
+              <span className="brand-tagline">Personal Workspace</span>
             </div>
           </div>
           <button
@@ -685,7 +712,7 @@ function App() {
             title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
-            {darkMode ? "☀️" : "🌙"}
+            {darkMode ? <SunIcon size={18} /> : <MoonIcon size={18} />}
           </button>
         </header>
 
@@ -696,6 +723,8 @@ function App() {
     );
   }
 
+  const completionRate = todos.length > 0 ? Math.round((completedCount / todos.length) * 100) : 0;
+
   return (
     <div className={`app ${darkMode ? "dark-mode" : "light-mode"}`}>
       {/* =========================
@@ -703,10 +732,15 @@ function App() {
       ========================= */}
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-icon">✓</div>
+          <div className="brand-icon">
+            <LogoIcon size={30} />
+          </div>
           <div>
-            <h1>Todo App</h1>
-            <span>Plan • Do • Achieve</span>
+            <div className="brand-title-row">
+              <h1>TaskFlow</h1>
+              <span className="pro-pill">PRO</span>
+            </div>
+            <span className="brand-subtitle">Personal Workspace</span>
           </div>
         </div>
 
@@ -722,8 +756,8 @@ function App() {
               setFilter("all");
             }}
           >
-            <span>⌂</span>
-            <span>Home</span>
+            <HomeIcon size={18} />
+            <span>Dashboard</span>
           </button>
 
           <button
@@ -734,9 +768,9 @@ function App() {
             }
             onClick={() => setActiveView("calendar")}
           >
-            <span>📅</span>
+            <CalendarIcon size={18} />
             <span>Calendar</span>
-            <b>{scheduledCount}</b>
+            {scheduledCount > 0 && <b className="nav-badge">{scheduledCount}</b>}
           </button>
 
           <button
@@ -750,9 +784,9 @@ function App() {
               setFilter("all");
             }}
           >
-            <span>☷</span>
-            <span>All Todos</span>
-            <b>{todos.length}</b>
+            <ListTodoIcon size={18} />
+            <span>All Tasks</span>
+            <b className="nav-badge">{todos.length}</b>
           </button>
 
           <button
@@ -766,9 +800,9 @@ function App() {
               setFilter("pending");
             }}
           >
-            <span>◷</span>
+            <ClockIcon size={18} />
             <span>Pending</span>
-            <b>{pendingCount}</b>
+            {pendingCount > 0 && <b className="nav-badge warning">{pendingCount}</b>}
           </button>
 
           <button
@@ -782,20 +816,29 @@ function App() {
               setFilter("completed");
             }}
           >
-            <span>✓</span>
+            <CheckCircleIcon size={18} />
             <span>Completed</span>
-            <b>{completedCount}</b>
+            {completedCount > 0 && <b className="nav-badge success">{completedCount}</b>}
           </button>
         </nav>
 
-        <div className="sidebar-message">
-          <div className="leaf">🌱</div>
-          <p>
-            Small steps
-            <br />
-            every day lead
-            <br />
-            to big results!
+        {/* MODERN PRODUCTIVITY CARD */}
+        <div className="sidebar-progress-card">
+          <div className="progress-header">
+            <div className="progress-title-wrap">
+              <TrendingUpIcon size={15} />
+              <span>Daily Progress</span>
+            </div>
+            <span className="progress-percentage">{completionRate}%</span>
+          </div>
+          <div className="progress-bar-track">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${completionRate}%` }}
+            ></div>
+          </div>
+          <p className="progress-caption">
+            {completedCount} of {todos.length} tasks completed
           </p>
         </div>
       </aside>
@@ -807,8 +850,12 @@ function App() {
         {/* HEADER */}
         <header className="header">
           <div className="mobile-brand">
-            <div className="brand-icon">✓</div>
-            <strong>Todo App</strong>
+            <LogoIcon size={26} />
+            <strong>TaskFlow</strong>
+          </div>
+
+          <div className="header-view-title">
+            <h2>{activeView === "calendar" ? "Calendar Schedule" : "Task Workspace"}</h2>
           </div>
 
           <div className="header-actions">
@@ -827,13 +874,13 @@ function App() {
               title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
               aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
-              {darkMode ? "☀️" : "🌙"}
+              {darkMode ? <SunIcon size={18} /> : <MoonIcon size={18} />}
             </button>
 
             {/* LOGGED IN USER PILL */}
             <div className="user" title={`Logged in as ${currentUser?.email || "User"}`}>
               <div className="avatar">
-                {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : "👤"}
+                {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : "U"}
               </div>
 
               <div className="user-details">
@@ -851,7 +898,8 @@ function App() {
                 title="Sign Out"
                 aria-label="Sign Out"
               >
-                Sign Out ↪
+                <LogOutIcon size={14} />
+                <span>Sign Out</span>
               </button>
             </div>
           </div>
@@ -859,11 +907,13 @@ function App() {
 
         {connectionError && (
           <div className="connection-alert-banner">
-            <span>
-              ⚠️ Could not connect to Spring Boot backend at <code>http://localhost:4040</code>
-            </span>
+            <div className="connection-alert-text">
+              <AlertTriangleIcon size={18} />
+              <span>Could not connect to Spring Boot backend at <code>http://localhost:4040</code></span>
+            </div>
             <button type="button" onClick={fetchTodos} className="retry-conn-btn">
-              ↻ Retry
+              <RefreshCwIcon size={14} />
+              <span>Retry</span>
             </button>
           </div>
         )}
@@ -881,40 +931,90 @@ function App() {
         ) : (
           <>
             {/* =========================
+                QUICK STATS SUMMARY CARDS
+            ========================= */}
+            <section className="stats-row">
+              <div className="stat-card">
+                <div className="stat-icon-wrap total">
+                  <ListTodoIcon size={18} />
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-label">Total Tasks</span>
+                  <strong className="stat-value">{todos.length}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon-wrap pending">
+                  <ClockIcon size={18} />
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-label">Pending</span>
+                  <strong className="stat-value">{pendingCount}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon-wrap completed">
+                  <CheckCircleIcon size={18} />
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-label">Completed</span>
+                  <strong className="stat-value">{completedCount}</strong>
+                </div>
+              </div>
+
+              <div
+                className="stat-card clickable"
+                onClick={() => setActiveView("calendar")}
+                title="Switch to calendar view"
+              >
+                <div className="stat-icon-wrap scheduled">
+                  <CalendarIcon size={18} />
+                </div>
+                <div className="stat-meta">
+                  <span className="stat-label">Scheduled</span>
+                  <strong className="stat-value">{scheduledCount}</strong>
+                </div>
+              </div>
+            </section>
+
+            {/* =========================
                 FORM CARD
             ========================= */}
             <section className="add-card">
               <div className="form-header">
                 <div className="form-icon">
-                  {editingId !== null ? "✎" : "+"}
+                  {editingId !== null ? <EditIcon size={18} /> : <PlusIcon size={18} />}
                 </div>
                 <div>
-                  <h2>{editingId !== null ? "Edit Todo" : "Add New Todo"}</h2>
-                  <p>Stay organized, meet your deadlines, and achieve more!</p>
+                  <h2>{editingId !== null ? "Edit Task" : "Create New Task"}</h2>
+                  <p>Organize, schedule, and execute your goals with clarity.</p>
                 </div>
               </div>
 
               <div className="form-grid">
                 {/* TITLE */}
-                <div className="field">
+                <div className="field title-field">
                   <label>
-                    Title <span>*</span>
+                    Task Title <span>*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter todo title"
+                    placeholder="e.g. Design system tokens & components"
                     value={title}
                     onChange={(event) => setTitle(event.target.value)}
                   />
                 </div>
 
                 {/* DESCRIPTION */}
-                <div className="field">
+                <div className="field desc-field">
                   <label>Description</label>
                   <textarea
-                    placeholder="Enter description (optional)"
+                    placeholder="Add details, context, or links (optional)..."
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
+                    rows={3}
                   />
                 </div>
 
@@ -922,7 +1022,7 @@ function App() {
                 <div className="field">
                   <label>Due Date</label>
                   <div className="input-icon" onClick={openDatePicker}>
-                    <span>📆</span>
+                    <CalendarIcon size={16} />
                     <input
                       ref={dateInputRef}
                       type="date"
@@ -940,7 +1040,7 @@ function App() {
                 <div className="field">
                   <label>Due Time</label>
                   <div className="input-icon" onClick={openTimePicker}>
-                    <span>⌛</span>
+                    <ClockIcon size={16} />
                     <input
                       ref={timeInputRef}
                       type="time"
@@ -978,7 +1078,8 @@ function App() {
                           }
                         }}
                       />
-                      <span>⏰ Set Task Reminder</span>
+                      <BellIcon size={16} />
+                      <span>Set Task Reminder</span>
                     </label>
 
                     {enableReminder && (
@@ -988,7 +1089,8 @@ function App() {
                           checked={sendReminderEmail}
                           onChange={(e) => setSendReminderEmail(e.target.checked)}
                         />
-                        <span>✉ Email Alert</span>
+                        <MailIcon size={15} />
+                        <span>Email Alert</span>
                       </label>
                     )}
                   </div>
@@ -1043,7 +1145,7 @@ function App() {
                       {/* EXPLICIT DATE & TIME INPUTS */}
                       <div className="reminder-datetime-inputs">
                         <div className="reminder-input-group">
-                          <label>Reminder Date:</label>
+                          <label>Reminder Date</label>
                           <input
                             type="date"
                             value={reminderDate}
@@ -1052,7 +1154,7 @@ function App() {
                         </div>
 
                         <div className="reminder-input-group">
-                          <label>Reminder Time:</label>
+                          <label>Reminder Time</label>
                           <input
                             type="time"
                             value={reminderTime}
@@ -1069,13 +1171,15 @@ function App() {
                           }`}
                         >
                           {isReminderInPast ? (
-                            <span>
-                              ⚠️ Selected reminder time is in the past! Please choose a future time.
-                            </span>
+                            <div className="reminder-banner-content">
+                              <AlertTriangleIcon size={16} />
+                              <span>Selected reminder time is in the past! Please select a future time.</span>
+                            </div>
                           ) : (
-                            <span>
-                              🔔 Alarm scheduled for: <strong>{reminderPreviewText}</strong>
-                            </span>
+                            <div className="reminder-banner-content">
+                              <BellIcon size={16} />
+                              <span>Alarm scheduled for: <strong>{reminderPreviewText}</strong></span>
+                            </div>
                           )}
                         </div>
                       )}
@@ -1083,22 +1187,31 @@ function App() {
                   )}
                 </div>
 
-                {/* IMAGE */}
+                {/* IMAGE ATTACHMENT */}
                 <div className="field image-field">
-                  <label>Image</label>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                    onChange={handleImageChange}
-                  />
-                  <small>JPG, PNG, GIF, WEBP • Max 5MB</small>
+                  <label>Attachment Image</label>
+                  <div className="image-input-control">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                      onChange={handleImageChange}
+                      id="todo-file-upload"
+                      className="hidden-file-input"
+                    />
+                    <label htmlFor="todo-file-upload" className="file-upload-button">
+                      <ImageIcon size={16} />
+                      <span>{image ? "Replace Image" : "Upload File"}</span>
+                    </label>
+                    <small>JPG, PNG, GIF, WEBP • Max 5MB</small>
+                  </div>
 
                   {imagePreview && (
                     <div className="preview-wrapper">
                       <img src={imagePreview} alt="Preview" />
                       <button
                         type="button"
+                        className="preview-remove-btn"
                         onClick={() => {
                           setImage(null);
                           setImagePreview("");
@@ -1106,8 +1219,9 @@ function App() {
                             fileInputRef.current.value = "";
                           }
                         }}
+                        aria-label="Remove image"
                       >
-                        ×
+                        <XIcon size={14} />
                       </button>
                     </div>
                   )}
@@ -1121,31 +1235,50 @@ function App() {
                   onClick={saveTodo}
                   disabled={saving}
                 >
-                  {saving
-                    ? "Saving..."
-                    : editingId !== null
-                    ? "✓ Update Todo"
-                    : "+ Add Todo"}
+                  {saving ? (
+                    "Saving..."
+                  ) : editingId !== null ? (
+                    <>
+                      <CheckIcon size={16} />
+                      <span>Update Task</span>
+                    </>
+                  ) : (
+                    <>
+                      <PlusIcon size={16} />
+                      <span>Add Task</span>
+                    </>
+                  )}
                 </button>
 
                 <button className="clear-button" onClick={clearForm}>
-                  ↻ Clear
+                  <RefreshCwIcon size={15} />
+                  <span>Clear</span>
                 </button>
               </div>
             </section>
 
             {/* =========================
-                SEARCH + FILTER
+                SEARCH + FILTER TOOLBAR
             ========================= */}
             <section className="toolbar">
               <div className="search-box">
-                <span>⌕</span>
+                <SearchIcon size={17} className="search-icon" />
                 <input
                   type="text"
-                  placeholder="Search todos..."
+                  placeholder="Search tasks by title or description..."
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
+                {search && (
+                  <button
+                    type="button"
+                    className="search-clear-btn"
+                    onClick={() => setSearch("")}
+                    aria-label="Clear search"
+                  >
+                    <XIcon size={14} />
+                  </button>
+                )}
               </div>
 
               <div className="filters">
@@ -1153,24 +1286,27 @@ function App() {
                   className={filter === "all" ? "filter active" : "filter"}
                   onClick={() => setFilter("all")}
                 >
-                  ✦ All
-                  <span>{todos.length}</span>
+                  <ListTodoIcon size={14} />
+                  <span>All</span>
+                  <span className="filter-count">{todos.length}</span>
                 </button>
 
                 <button
                   className={filter === "pending" ? "filter pending active" : "filter pending"}
                   onClick={() => setFilter("pending")}
                 >
-                  ◷ Pending
-                  <span>{pendingCount}</span>
+                  <ClockIcon size={14} />
+                  <span>Pending</span>
+                  <span className="filter-count">{pendingCount}</span>
                 </button>
 
                 <button
                   className={filter === "completed" ? "filter completed active" : "filter completed"}
                   onClick={() => setFilter("completed")}
                 >
-                  ✓ Completed
-                  <span>{completedCount}</span>
+                  <CheckCircleIcon size={14} />
+                  <span>Completed</span>
+                  <span className="filter-count">{completedCount}</span>
                 </button>
               </div>
             </section>
@@ -1181,13 +1317,19 @@ function App() {
             {loading ? (
               <div className="empty">
                 <div className="loader"></div>
-                <p>Loading todos...</p>
+                <p>Loading your tasks...</p>
               </div>
             ) : filteredTodos.length === 0 ? (
               <div className="empty">
-                <div className="empty-icon">📝</div>
-                <h3>No todos found</h3>
-                <p>Add a new task to get started.</p>
+                <div className="empty-icon">
+                  <InboxIcon size={46} />
+                </div>
+                <h3>No tasks found</h3>
+                <p>
+                  {search
+                    ? `No tasks matching "${search}". Try clearing your search.`
+                    : "Your workspace is clear. Create a new task to get started."}
+                </p>
               </div>
             ) : (
               <div className="todo-grid">
@@ -1201,19 +1343,26 @@ function App() {
                       }
                       key={todo.id}
                     >
-                      {/* IMAGE */}
-                      {todoImage ? (
+                      {/* ATTACHMENT IMAGE */}
+                      {todoImage && (
                         <div className="todo-image">
                           <img src={todoImage} alt={todo.title} />
-                          <span className="image-badge">▧</span>
                         </div>
-                      ) : (
-                        <div className="todo-image no-image">📝</div>
                       )}
 
                       {/* CONTENT */}
                       <div className="todo-content">
-                        <h3>{todo.title}</h3>
+                        <div className="todo-header-row">
+                          <button
+                            type="button"
+                            className={`todo-checkbox ${todo.completed ? "checked" : ""}`}
+                            onClick={() => toggleTodo(todo)}
+                            title={todo.completed ? "Mark as Pending" : "Mark as Completed"}
+                          >
+                            {todo.completed && <CheckIcon size={13} />}
+                          </button>
+                          <h3 className="todo-title">{todo.title}</h3>
+                        </div>
 
                         {todo.description && (
                           <p className="description">{todo.description}</p>
@@ -1221,11 +1370,17 @@ function App() {
 
                         <div className="todo-meta">
                           {todo.dueDate && (
-                            <span>▣ {formatDate(todo.dueDate)}</span>
+                            <span className="meta-chip date-chip">
+                              <CalendarIcon size={13} />
+                              <span>{formatDate(todo.dueDate)}</span>
+                            </span>
                           )}
 
                           {todo.dueTime && (
-                            <span>◷ {todo.dueTime.substring(0, 5)}</span>
+                            <span className="meta-chip time-chip">
+                              <ClockIcon size={13} />
+                              <span>{todo.dueTime.substring(0, 5)}</span>
+                            </span>
                           )}
 
                           {todo.reminderDateTime && (
@@ -1233,7 +1388,8 @@ function App() {
                               className="reminder-tag"
                               title={`Reminder active for ${todo.reminderDateTime.replace("T", " ")}`}
                             >
-                              🔔 Reminder
+                              <BellIcon size={12} />
+                              <span>Reminder</span>
                             </span>
                           )}
                         </div>
@@ -1244,17 +1400,31 @@ function App() {
                               todo.completed ? "status completed" : "status pending"
                             }
                           >
-                            {todo.completed ? "✓ Completed" : "◷ Pending"}
+                            {todo.completed ? (
+                              <>
+                                <CheckCircleIcon size={13} />
+                                <span>Completed</span>
+                              </>
+                            ) : (
+                              <>
+                                <ClockIcon size={13} />
+                                <span>Pending</span>
+                              </>
+                            )}
                           </span>
 
                           <div className="actions">
-                            {/* COMPLETE */}
+                            {/* COMPLETE / UNDO */}
                             <button
                               className="complete-btn"
                               title={todo.completed ? "Mark Pending" : "Complete"}
                               onClick={() => toggleTodo(todo)}
                             >
-                              {todo.completed ? "↶" : "✓"}
+                              {todo.completed ? (
+                                <UndoIcon size={15} />
+                              ) : (
+                                <CheckIcon size={15} />
+                              )}
                             </button>
 
                             {/* EDIT */}
@@ -1263,7 +1433,7 @@ function App() {
                               title="Edit"
                               onClick={() => editTodo(todo)}
                             >
-                              ✎
+                              <EditIcon size={15} />
                             </button>
 
                             {/* DELETE */}
@@ -1272,7 +1442,7 @@ function App() {
                               title="Delete"
                               onClick={() => deleteTodo(todo.id)}
                             >
-                              🗑
+                              <TrashIcon size={15} />
                             </button>
                           </div>
                         </div>
@@ -1286,7 +1456,7 @@ function App() {
             {/* FOOTER */}
             <footer className="footer">
               Showing <strong>{filteredTodos.length}</strong> of{" "}
-              <strong>{todos.length}</strong> todos
+              <strong>{todos.length}</strong> tasks
             </footer>
           </>
         )}

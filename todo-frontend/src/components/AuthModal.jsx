@@ -1,4 +1,17 @@
 import { useState, useRef, useEffect } from "react";
+import {
+  LogoIcon,
+  MailIcon,
+  LockIcon,
+  KeyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  AlertCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  RefreshCwIcon,
+  XIcon,
+} from "./Icons";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:4040"}/api/auth`;
 
@@ -53,14 +66,12 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
 
   // OTP Digits handler
   const handleOtpChange = (index, value) => {
-    // Only accept numeric characters
     const cleanVal = value.replace(/\D/g, "");
     if (!cleanVal && value !== "") return;
 
     const newDigits = [...otpDigits];
 
     if (cleanVal.length > 1) {
-      // Pasted string
       const pasted = cleanVal.slice(0, 6).split("");
       for (let i = 0; i < 6; i++) {
         newDigits[i] = pasted[i] || "";
@@ -74,7 +85,6 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
     newDigits[index] = cleanVal;
     setOtpDigits(newDigits);
 
-    // Auto move to next input
     if (cleanVal && index < 5) {
       otpInputRefs.current[index + 1]?.focus();
     }
@@ -101,25 +111,14 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
     otpInputRefs.current[focusIndex]?.focus();
   };
 
-  const getFullOtp = () => otpDigits.join("");
-
-  /* =======================================
-     AUTH ACTIONS
-  ======================================= */
-
   // 1. LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
-
-    if (!email.trim() || !password) {
-      setErrorMsg("Please enter both email and password.");
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
       const response = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,45 +128,42 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Invalid credentials. Please try again.");
+        throw new Error(data.message || "Invalid credentials.");
       }
 
-      setSuccessMsg("Login successful! Welcome back.");
-      if (onLoginSuccess) {
-        setTimeout(() => {
-          onLoginSuccess(data.data);
-        }, 500);
-      }
+      setSuccessMsg("Logged in successfully! Loading your workspace...");
+      setTimeout(() => {
+        onLoginSuccess({
+          id: data.userId,
+          email: data.email || email.trim(),
+        });
+      }, 400);
     } catch (err) {
-      setErrorMsg(err.message || "Failed to log in. Please check backend connection.");
+      setErrorMsg(err.message || "Could not log in. Check your backend connection.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. REGISTER
+  // 2. SIGN UP / REGISTER
   const handleRegister = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
-    if (!email.trim() || !password) {
-      setErrorMsg("Please fill in all required fields.");
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match. Please verify.");
       return;
     }
 
     if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long.");
+      setErrorMsg("Password must be at least 6 characters.");
       return;
     }
 
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match.");
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
       const response = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -180,20 +176,21 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
         throw new Error(data.message || "Registration failed.");
       }
 
-      setSuccessMsg("Account created successfully! You can now sign in.");
-      setPassword("");
-      setConfirmPassword("");
+      setSuccessMsg("Account created! Signing you in...");
       setTimeout(() => {
-        switchMode("login");
-      }, 1500);
+        onLoginSuccess({
+          id: data.userId,
+          email: data.email || email.trim(),
+        });
+      }, 500);
     } catch (err) {
-      setErrorMsg(err.message || "Registration failed.");
+      setErrorMsg(err.message || "Could not complete registration.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 3. SEND OTP (Forgot Password Step 1)
+  // 3. SEND FORGOT PASSWORD OTP
   const handleSendOtp = async (e) => {
     if (e) e.preventDefault();
     setErrorMsg("");
@@ -204,8 +201,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
       const response = await fetch(`${API_BASE}/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,48 +213,32 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to send OTP.");
+        throw new Error(data.message || "Failed to send reset code.");
       }
 
-      setSuccessMsg(data.message || "OTP sent successfully to your email!");
+      setSuccessMsg(data.message || "Verification code sent to your email!");
       setForgotStep(2);
       setResendTimer(60);
       setOtpDigits(["", "", "", "", "", ""]);
       setTimeout(() => {
         otpInputRefs.current[0]?.focus();
-      }, 200);
+      }, 100);
     } catch (err) {
-      const msg = err.message || "";
-      if (msg.toLowerCase().includes("authentication failed") || msg.toLowerCase().includes("badcredentials")) {
-        setErrorMsg("Gmail SMTP Authentication failed: Google rejected the App Password for pavanparise77@gmail.com. Please generate a new 16-character App Password at myaccount.google.com/apppasswords and update application.properties.");
-      } else {
-        setErrorMsg(msg || "Unable to send OTP. Please check your email and try again.");
-      }
+      setErrorMsg(err.message || "Failed to send OTP code.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 4. RESET PASSWORD (Forgot Password Step 2)
+  // 4. RESET PASSWORD WITH OTP
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
-    const fullOtp = getFullOtp();
-
+    const fullOtp = otpDigits.join("");
     if (fullOtp.length !== 6) {
       setErrorMsg("Please enter the complete 6-digit OTP code.");
-      return;
-    }
-
-    if (!password) {
-      setErrorMsg("Please enter a new password.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters long.");
       return;
     }
 
@@ -265,8 +247,14 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
       return;
     }
 
+    if (password.length < 6) {
+      setErrorMsg("New password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      setLoading(true);
       const response = await fetch(`${API_BASE}/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -297,18 +285,20 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
       <div className="auth-card">
         {isModal && onClose && (
           <button className="auth-close-btn" onClick={onClose} aria-label="Close modal">
-            ✕
+            <XIcon size={18} />
           </button>
         )}
 
         {/* Brand Header */}
         <div className="auth-header">
-          <div className="auth-brand-badge">✓</div>
-          <h2>Todo App</h2>
+          <div className="auth-brand-badge">
+            <LogoIcon size={36} />
+          </div>
+          <h2>TaskFlow</h2>
           <p className="auth-subtitle">
             {mode === "login" && "Welcome back! Please sign in to continue"}
-            {mode === "register" && "Create your account to start managing tasks"}
-            {mode === "forgot" && "Account Recovery via Email OTP"}
+            {mode === "register" && "Create your workspace account to start managing tasks"}
+            {mode === "forgot" && "Account Recovery via Email Verification"}
           </p>
         </div>
 
@@ -335,14 +325,14 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
         {/* Notifications / Alerts */}
         {errorMsg && (
           <div className="auth-alert error-alert" role="alert">
-            <span className="alert-icon">⚠️</span>
+            <AlertCircleIcon size={16} className="alert-icon" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
           <div className="auth-alert success-alert" role="alert">
-            <span className="alert-icon">✓</span>
+            <CheckCircleIcon size={16} className="alert-icon" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -355,7 +345,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             <div className="auth-field">
               <label htmlFor="login-email">Email Address</label>
               <div className="auth-input-wrapper">
-                <span className="input-prefix-icon">✉️</span>
+                <span className="input-prefix-icon">
+                  <MailIcon size={16} />
+                </span>
                 <input
                   id="login-email"
                   type="email"
@@ -380,7 +372,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                 </button>
               </div>
               <div className="auth-input-wrapper">
-                <span className="input-prefix-icon">🔒</span>
+                <span className="input-prefix-icon">
+                  <LockIcon size={16} />
+                </span>
                 <input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
@@ -396,7 +390,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                  {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                 </button>
               </div>
             </div>
@@ -407,7 +401,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                   <span className="btn-spinner"></span> Signing In...
                 </span>
               ) : (
-                "Sign In →"
+                "Sign In"
               )}
             </button>
 
@@ -432,7 +426,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             <div className="auth-field">
               <label htmlFor="reg-email">Email Address</label>
               <div className="auth-input-wrapper">
-                <span className="input-prefix-icon">✉️</span>
+                <span className="input-prefix-icon">
+                  <MailIcon size={16} />
+                </span>
                 <input
                   id="reg-email"
                   type="email"
@@ -448,7 +444,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             <div className="auth-field">
               <label htmlFor="reg-password">Password</label>
               <div className="auth-input-wrapper">
-                <span className="input-prefix-icon">🔒</span>
+                <span className="input-prefix-icon">
+                  <LockIcon size={16} />
+                </span>
                 <input
                   id="reg-password"
                   type={showPassword ? "text" : "password"}
@@ -464,7 +462,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                   className="toggle-pw-btn"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                  {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                 </button>
               </div>
             </div>
@@ -472,7 +470,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             <div className="auth-field">
               <label htmlFor="reg-confirm-password">Confirm Password</label>
               <div className="auth-input-wrapper">
-                <span className="input-prefix-icon">🔒</span>
+                <span className="input-prefix-icon">
+                  <LockIcon size={16} />
+                </span>
                 <input
                   id="reg-confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
@@ -487,7 +487,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                   className="toggle-pw-btn"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                  {showConfirmPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                 </button>
               </div>
             </div>
@@ -498,7 +498,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                   <span className="btn-spinner"></span> Creating Account...
                 </span>
               ) : (
-                "Create Account →"
+                "Create Account"
               )}
             </button>
 
@@ -542,17 +542,21 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             {forgotStep === 1 && (
               <form className="auth-form" onSubmit={handleSendOtp}>
                 <div className="flow-explanation">
-                  <div className="key-icon">🔑</div>
+                  <div className="key-icon">
+                    <KeyIcon size={20} />
+                  </div>
                   <p>
-                    Don't worry! Enter your registered email address and we'll send a
-                    <strong> 6-digit OTP code</strong> to reset your password.
+                    Enter your registered email address and we'll send a
+                    <strong> 6-digit verification code</strong> to reset your password.
                   </p>
                 </div>
 
                 <div className="auth-field">
                   <label htmlFor="forgot-email">Registered Email</label>
                   <div className="auth-input-wrapper">
-                    <span className="input-prefix-icon">✉️</span>
+                    <span className="input-prefix-icon">
+                      <MailIcon size={16} />
+                    </span>
                     <input
                       id="forgot-email"
                       type="email"
@@ -571,7 +575,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                       <span className="btn-spinner"></span> Sending OTP Code...
                     </span>
                   ) : (
-                    "Send Verification Code 📩"
+                    "Send Verification Code"
                   )}
                 </button>
 
@@ -581,7 +585,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                     className="link-back"
                     onClick={() => switchMode("login")}
                   >
-                    ← Back to Sign In
+                    Back to Sign In
                   </button>
                 </div>
               </form>
@@ -591,7 +595,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             {forgotStep === 2 && (
               <form className="auth-form" onSubmit={handleResetPassword}>
                 <div className="otp-banner">
-                  <span className="mail-icon">📬</span>
+                  <span className="mail-icon">
+                    <MailIcon size={18} />
+                  </span>
                   <div>
                     <p className="otp-sent-text">
                       We sent a 6-digit code to <strong>{email}</strong>
@@ -631,7 +637,8 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                 <div className="resend-row">
                   {resendTimer > 0 ? (
                     <span className="resend-timer-text">
-                      ⏱ Resend code in <strong>{resendTimer}s</strong>
+                      <ClockIcon size={14} />
+                      <span>Resend code in <strong>{resendTimer}s</strong></span>
                     </span>
                   ) : (
                     <button
@@ -640,7 +647,8 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                       onClick={() => handleSendOtp(null)}
                       disabled={loading}
                     >
-                      ↻ Resend OTP
+                      <RefreshCwIcon size={14} />
+                      <span>Resend OTP</span>
                     </button>
                   )}
                 </div>
@@ -649,7 +657,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                 <div className="auth-field">
                   <label htmlFor="reset-new-password">New Password</label>
                   <div className="auth-input-wrapper">
-                    <span className="input-prefix-icon">🔒</span>
+                    <span className="input-prefix-icon">
+                      <LockIcon size={16} />
+                    </span>
                     <input
                       id="reset-new-password"
                       type={showPassword ? "text" : "password"}
@@ -664,7 +674,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                       className="toggle-pw-btn"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? "👁️" : "👁️‍🗨️"}
+                      {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </button>
                   </div>
                 </div>
@@ -673,7 +683,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                 <div className="auth-field">
                   <label htmlFor="reset-confirm-password">Confirm New Password</label>
                   <div className="auth-input-wrapper">
-                    <span className="input-prefix-icon">🔒</span>
+                    <span className="input-prefix-icon">
+                      <LockIcon size={16} />
+                    </span>
                     <input
                       id="reset-confirm-password"
                       type={showConfirmPassword ? "text" : "password"}
@@ -687,7 +699,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                       className="toggle-pw-btn"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                      {showConfirmPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
                     </button>
                   </div>
                 </div>
@@ -698,7 +710,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                       <span className="btn-spinner"></span> Resetting Password...
                     </span>
                   ) : (
-                    "Reset Password & Sign In ✓"
+                    "Reset Password & Sign In"
                   )}
                 </button>
 
@@ -708,7 +720,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                     className="link-back"
                     onClick={() => switchMode("login")}
                   >
-                    ← Cancel & Back to Sign In
+                    Cancel & Back to Sign In
                   </button>
                 </div>
               </form>
@@ -717,7 +729,9 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
             {/* STEP 3: Success Screen */}
             {forgotStep === 3 && (
               <div className="reset-success-screen">
-                <div className="success-badge-large">✓</div>
+                <div className="success-badge-large">
+                  <CheckCircleIcon size={32} />
+                </div>
                 <h3>Password Reset Complete!</h3>
                 <p>
                   Your password has been successfully updated. You can now log in using your
@@ -734,7 +748,7 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
                     switchMode("login");
                   }}
                 >
-                  Proceed to Sign In →
+                  Proceed to Sign In
                 </button>
               </div>
             )}

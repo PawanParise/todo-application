@@ -1,3 +1,5 @@
+import { BellIcon, CalendarIcon, ClockIcon, CheckIcon, XIcon } from "./Icons";
+
 export default function ReminderAlert({
   activeReminder,
   onDismiss,
@@ -13,10 +15,10 @@ export default function ReminderAlert({
         
         <div className="reminder-alert-header">
           <div className="reminder-pulse-icon">
-            <span className="bell-ring">🔔</span>
+            <BellIcon size={24} className="bell-ring" />
           </div>
           <div>
-            <span className="reminder-kicker">Task Reminder</span>
+            <span className="reminder-kicker">Task Due Reminder</span>
             <h3 className="reminder-title">{activeReminder.title}</h3>
           </div>
         </div>
@@ -29,13 +31,19 @@ export default function ReminderAlert({
           {activeReminder.dueDate && (
             <div className="reminder-meta-item">
               <span className="meta-label">Due Date</span>
-              <span className="meta-val">📆 {activeReminder.dueDate}</span>
+              <span className="meta-val">
+                <CalendarIcon size={14} />
+                <span>{activeReminder.dueDate}</span>
+              </span>
             </div>
           )}
           {activeReminder.dueTime && (
             <div className="reminder-meta-item">
               <span className="meta-label">Due Time</span>
-              <span className="meta-val">⏰ {activeReminder.dueTime.substring(0, 5)}</span>
+              <span className="meta-val">
+                <ClockIcon size={14} />
+                <span>{activeReminder.dueTime.substring(0, 5)}</span>
+              </span>
             </div>
           )}
         </div>
@@ -46,21 +54,24 @@ export default function ReminderAlert({
             className="reminder-btn complete"
             onClick={() => onComplete(activeReminder)}
           >
-            ✓ Mark Complete
+            <CheckIcon size={16} />
+            <span>Mark Complete</span>
           </button>
           <button
             type="button"
             className="reminder-btn snooze"
             onClick={() => onSnooze(activeReminder.id, 10)}
           >
-            ⏱ Snooze (10m)
+            <ClockIcon size={15} />
+            <span>Snooze (10m)</span>
           </button>
           <button
             type="button"
             className="reminder-btn dismiss"
             onClick={() => onDismiss(activeReminder.id)}
           >
-            ✕ Dismiss
+            <XIcon size={15} />
+            <span>Dismiss</span>
           </button>
         </div>
       </div>

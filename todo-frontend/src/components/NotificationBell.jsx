@@ -1,4 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  BellIcon,
+  ClockIcon,
+  AlertCircleIcon,
+  CalendarIcon,
+  CheckIcon,
+  XIcon,
+  SparklesIcon,
+} from "./Icons";
 
 export default function NotificationBell({
   todos = [],
@@ -89,7 +98,7 @@ export default function NotificationBell({
         }
         aria-label="Reminders"
       >
-        <span>🔔</span>
+        <BellIcon size={19} />
         {totalAlertCount > 0 && (
           <span className="bell-badge">{totalAlertCount}</span>
         )}
@@ -99,15 +108,18 @@ export default function NotificationBell({
         <div className="bell-dropdown-card">
           <div className="bell-dropdown-header">
             <div className="bell-title-wrap">
-              <span className="bell-icon-mini">⏰</span>
+              <span className="bell-icon-mini">
+                <BellIcon size={16} />
+              </span>
               <h4>Reminders Center</h4>
             </div>
             <button
               type="button"
               className="bell-close-btn"
               onClick={() => setIsOpen(false)}
+              aria-label="Close notifications"
             >
-              ×
+              <XIcon size={16} />
             </button>
           </div>
 
@@ -130,9 +142,10 @@ export default function NotificationBell({
             {/* DUE NOW / OVERDUE SECTION */}
             {dueReminders.length > 0 && (
               <div className="bell-section">
-                <span className="bell-section-title overdue">
-                  ⚠️ Action Required ({dueReminders.length})
-                </span>
+                <div className="bell-section-title overdue">
+                  <AlertCircleIcon size={14} />
+                  <span>Action Required ({dueReminders.length})</span>
+                </div>
                 <div className="bell-list">
                   {dueReminders.map((todo) => (
                     <div key={todo.id} className="bell-item overdue">
@@ -155,7 +168,7 @@ export default function NotificationBell({
                           title="Mark Complete"
                           onClick={() => onCompleteTodo(todo)}
                         >
-                          ✓
+                          <CheckIcon size={14} />
                         </button>
                         <button
                           type="button"
@@ -163,7 +176,7 @@ export default function NotificationBell({
                           title="Snooze 10m"
                           onClick={() => onSnoozeTodo(todo.id, 10)}
                         >
-                          ⏱
+                          <ClockIcon size={14} />
                         </button>
                       </div>
                     </div>
@@ -175,9 +188,10 @@ export default function NotificationBell({
             {/* UPCOMING SECTION */}
             {upcomingReminders.length > 0 && (
               <div className="bell-section">
-                <span className="bell-section-title upcoming">
-                  📅 Due Next 24 Hours ({upcomingReminders.length})
-                </span>
+                <div className="bell-section-title upcoming">
+                  <CalendarIcon size={14} />
+                  <span>Due in Next 24 Hours ({upcomingReminders.length})</span>
+                </div>
                 <div className="bell-list">
                   {upcomingReminders.map((todo) => (
                     <div key={todo.id} className="bell-item upcoming">
@@ -209,7 +223,9 @@ export default function NotificationBell({
 
             {dueReminders.length === 0 && upcomingReminders.length === 0 && (
               <div className="bell-empty">
-                <span>🎉</span>
+                <div className="bell-empty-icon">
+                  <SparklesIcon size={24} />
+                </div>
                 <h5>All caught up!</h5>
                 <p>No pending reminders for today.</p>
               </div>
