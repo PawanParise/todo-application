@@ -66,6 +66,14 @@ public class UserService {
         return user;
     }
 
+    public User getUserByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        return userRepository.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
     public String sendForgotPasswordOtp(String email) {
         if (email == null || email.isBlank()) {
             throw new RuntimeException("Email is required");

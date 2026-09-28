@@ -39,7 +39,7 @@ public class Todo {
 
     private Boolean reminderSent = false;
 
-    @Lob
+    @jakarta.persistence.Column(name = "image_data", columnDefinition = "bytea")
     private byte[] imageData;
 
     private String imageType;

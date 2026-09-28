@@ -12,13 +12,35 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(originPatterns = {"http://localhost:*", "http://127.0.0.1:*"}, allowCredentials = "true")
+@CrossOrigin(originPatterns = {"http://localhost:*", "http://127.0.0.1:*", "https://*.onrender.com"}, allowCredentials = "true")
 public class AuthController {
 
     private final UserService userService;
 
     public AuthController(UserService userService) {
         this.userService = userService;
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(
+            @RequestParam(required = false) String email,
+            @RequestHeader(value = "X-User-Email", required = false) String headerEmail
+    ) {
+        try {
+            String targetEmail = email != null && !email.isBlank() ? email : headerEmail;
+            if (targetEmail == null || targetEmail.isBlank()) {
+                return ResponseEntity.badRequest().body(new AuthResponse(false, "Email is required"));
+            }
+            User user = userService.getUserByEmail(targetEmail);
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("userId", user.getId());
+            userData.put("email", user.getEmail());
+
+            return ResponseEntity.ok(new AuthResponse(true, "User fetched successfully", userData));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new AuthResponse(false, e.getMessage()));
+        }
     }
 
     @PostMapping("/register")
@@ -42,6 +64,7 @@ public class AuthController {
             User user = userService.registerUser(email, password);
             Map<String, Object> userData = new HashMap<>();
             userData.put("id", user.getId());
+            userData.put("userId", user.getId());
             userData.put("email", user.getEmail());
 
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -76,6 +99,7 @@ public class AuthController {
             User user = userService.loginUser(email, password);
             Map<String, Object> userData = new HashMap<>();
             userData.put("id", user.getId());
+            userData.put("userId", user.getId());
             userData.put("email", user.getEmail());
 
             return ResponseEntity.ok(new AuthResponse(true, "Login successful", userData));

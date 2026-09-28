@@ -133,9 +133,13 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
 
       setSuccessMsg("Logged in successfully! Loading your workspace...");
       setTimeout(() => {
+        const userInfo = data.data || {};
+        const userId = userInfo.id || userInfo.userId || data.userId || data.id;
+        const userEmail = userInfo.email || data.email || email.trim();
+
         onLoginSuccess({
-          id: data.userId,
-          email: data.email || email.trim(),
+          id: userId,
+          email: userEmail,
         });
       }, 400);
     } catch (err) {
@@ -178,9 +182,13 @@ export default function AuthModal({ onLoginSuccess, isModal = false, onClose }) 
 
       setSuccessMsg("Account created! Signing you in...");
       setTimeout(() => {
+        const userInfo = data.data || {};
+        const userId = userInfo.id || userInfo.userId || data.userId || data.id;
+        const userEmail = userInfo.email || data.email || email.trim();
+
         onLoginSuccess({
-          id: data.userId,
-          email: data.email || email.trim(),
+          id: userId,
+          email: userEmail,
         });
       }, 500);
     } catch (err) {
