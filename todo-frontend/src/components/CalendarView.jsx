@@ -370,6 +370,28 @@ export default function CalendarView({
                     )}
                   </div>
 
+                  {/* MOBILE COMPACT DOTS */}
+                  <div className="day-dots-mobile" aria-hidden="true">
+                    {filteredDayTasks.slice(0, 3).map((todo) => {
+                      const taskOverdue = isOverdue(todo);
+                      return (
+                        <span
+                          key={todo.id}
+                          className={`day-dot ${
+                            todo.completed
+                              ? "dot-completed"
+                              : taskOverdue
+                              ? "dot-overdue"
+                              : "dot-pending"
+                          }`}
+                        />
+                      );
+                    })}
+                    {filteredDayTasks.length > 3 && (
+                      <span className="day-dot-more">+</span>
+                    )}
+                  </div>
+
                   {hasOverdue && !cell.isToday && (
                     <div className="day-overdue-pip" title="Has overdue tasks"></div>
                   )}

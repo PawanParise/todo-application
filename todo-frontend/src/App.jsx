@@ -29,12 +29,16 @@ import {
   XIcon,
   InboxIcon,
   TrendingUpIcon,
+  MenuIcon,
 } from "./components/Icons";
 
 const API_URL = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:4040"}/api/todos`;
 
 function App() {
   const [todos, setTodos] = useState([]);
+
+  // Mobile navigation drawer toggle
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Active view: "tasks" or "calendar"
   const [activeView, setActiveView] = useState("tasks");
@@ -850,21 +854,40 @@ function App() {
 
   return (
     <div className={`app ${darkMode ? "dark-mode" : "light-mode"}`}>
+      {/* MOBILE DRAWER BACKDROP */}
+      {mobileMenuOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* =========================
           SIDEBAR
       ========================= */}
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-icon">
-            <LogoIcon size={30} />
-          </div>
-          <div>
-            <div className="brand-title-row">
-              <h1>TaskFlow</h1>
-              <span className="pro-pill">PRO</span>
+      <aside className={`sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
+        <div className="sidebar-top-row">
+          <div className="brand">
+            <div className="brand-icon">
+              <LogoIcon size={30} />
             </div>
-            <span className="brand-subtitle">Personal Workspace</span>
+            <div>
+              <div className="brand-title-row">
+                <h1>TaskFlow</h1>
+                <span className="pro-pill">PRO</span>
+              </div>
+              <span className="brand-subtitle">Personal Workspace</span>
+            </div>
           </div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <XIcon size={18} />
+          </button>
         </div>
 
         <nav className="navigation">
@@ -877,6 +900,7 @@ function App() {
             onClick={() => {
               setActiveView("tasks");
               setFilter("all");
+              setMobileMenuOpen(false);
             }}
           >
             <HomeIcon size={18} />
@@ -889,27 +913,14 @@ function App() {
                 ? "nav-item active"
                 : "nav-item"
             }
-            onClick={() => setActiveView("calendar")}
+            onClick={() => {
+              setActiveView("calendar");
+              setMobileMenuOpen(false);
+            }}
           >
             <CalendarIcon size={18} />
             <span>Calendar</span>
             {scheduledCount > 0 && <b className="nav-badge">{scheduledCount}</b>}
-          </button>
-
-          <button
-            className={
-              activeView === "tasks" && filter === "all"
-                ? "nav-item"
-                : "nav-item"
-            }
-            onClick={() => {
-              setActiveView("tasks");
-              setFilter("all");
-            }}
-          >
-            <ListTodoIcon size={18} />
-            <span>All Tasks</span>
-            <b className="nav-badge">{todos.length}</b>
           </button>
 
           <button
@@ -921,6 +932,7 @@ function App() {
             onClick={() => {
               setActiveView("tasks");
               setFilter("pending");
+              setMobileMenuOpen(false);
             }}
           >
             <ClockIcon size={18} />
@@ -937,6 +949,7 @@ function App() {
             onClick={() => {
               setActiveView("tasks");
               setFilter("completed");
+              setMobileMenuOpen(false);
             }}
           >
             <CheckCircleIcon size={18} />
@@ -944,6 +957,33 @@ function App() {
             {completedCount > 0 && <b className="nav-badge success">{completedCount}</b>}
           </button>
         </nav>
+
+        {/* MOBILE USER PROFILE SECTION IN DRAWER */}
+        <div className="sidebar-mobile-user">
+          <div className="sidebar-user-info">
+            <div className="avatar">
+              {currentUser?.email ? currentUser.email.charAt(0).toUpperCase() : "U"}
+            </div>
+            <div className="user-details">
+              <span className="user-name">
+                {currentUser?.email ? currentUser.email.split("@")[0] : "User"}
+              </span>
+              <span className="user-email-small">
+                {currentUser?.email || ""}
+              </span>
+            </div>
+          </div>
+          <button
+            className="sidebar-logout-btn"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleLogout();
+            }}
+          >
+            <LogOutIcon size={15} />
+            <span>Sign Out</span>
+          </button>
+        </div>
 
         {/* MODERN PRODUCTIVITY CARD */}
         <div className="sidebar-progress-card">
@@ -972,9 +1012,19 @@ function App() {
       <main className="main">
         {/* HEADER */}
         <header className="header">
-          <div className="mobile-brand">
-            <LogoIcon size={26} />
-            <strong>TaskFlow</strong>
+          <div className="mobile-header-left">
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <MenuIcon size={22} />
+            </button>
+            <div className="mobile-brand">
+              <LogoIcon size={26} />
+              <strong>TaskFlow</strong>
+            </div>
           </div>
 
           <div className="header-view-title">
@@ -1606,6 +1656,85 @@ function App() {
           setActiveReminder(null);
         }}
       />
+
+      {/* =========================
+          MOBILE BOTTOM TAB BAR
+      ========================= */}
+      <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mobile-tab-btn ${activeView === "tasks" && filter === "all" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("tasks");
+            setFilter("all");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <HomeIcon size={20} />
+          <span>Tasks</span>
+          {todos.length > 0 && <span className="tab-badge">{todos.length}</span>}
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${activeView === "calendar" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("calendar");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <CalendarIcon size={20} />
+          <span>Calendar</span>
+          {scheduledCount > 0 && <span className="tab-badge">{scheduledCount}</span>}
+        </button>
+
+        <button
+          type="button"
+          className="mobile-tab-btn mobile-add-tab-btn"
+          onClick={() => {
+            setActiveView("tasks");
+            const titleInput = document.querySelector(".title-field input");
+            if (titleInput) {
+              titleInput.scrollIntoView({ behavior: "smooth", block: "center" });
+              titleInput.focus();
+            }
+          }}
+          aria-label="Add New Task"
+        >
+          <div className="mobile-add-btn-circle">
+            <PlusIcon size={22} />
+          </div>
+          <span>Add</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${activeView === "tasks" && filter === "pending" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("tasks");
+            setFilter("pending");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <ClockIcon size={20} />
+          <span>Pending</span>
+          {pendingCount > 0 && <span className="tab-badge warning">{pendingCount}</span>}
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-tab-btn ${activeView === "tasks" && filter === "completed" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("tasks");
+            setFilter("completed");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        >
+          <CheckCircleIcon size={20} />
+          <span>Done</span>
+          {completedCount > 0 && <span className="tab-badge success">{completedCount}</span>}
+        </button>
+      </nav>
     </div>
   );
 }
